@@ -1,4 +1,4 @@
 proassign
 =========
 
-Bayesian Protein NMR Assignment
+Bayesian Protein NMR AssignmentBayesian Protein NMR Assignment
