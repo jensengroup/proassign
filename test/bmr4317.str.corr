@@ -1,0 +1,32 @@
+import src.multics as multics
+import numpy
+#def assemble_HN_matrix():
+
+
+ref_data 		= multics.readfile("bmr4317.str.corr", "brmb")
+camshift_data 	= multics.readfile("rn1ail.out.1.pdb.camshift",	"camshift")
+
+print multics.rmsd(camshift_data,ref_data, "N")
+print multics.rmsd(camshift_data,ref_data, "H")
+
+length = max(ref_data[-1][0],
+             camshift_data[-1][0])
+
+a = numpy.zeros((length, 2))
+b = numpy.zeros((length, 2))
+
+for atom in ref_data:
+    index = atom[0] - 1
+    if atom[2] == 'H':
+        a[index][0] = atom[3]
+    if atom[2] == 'N':
+        a[index][1] = atom[3]
+
+
+for atom in camshift_data:
+    index = atom[0] - 1
+    if atom[2] == 'H':
+        b[index][0] = atom[3]
+    if atom[2] == 'N':
+        b[index][1] = atom[3]
+
