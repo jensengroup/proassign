@@ -8,7 +8,7 @@ import reader
 
 steps=50000000
 repeat=1
-Names=['1GZI', '1A2P', '1CEX', '1HCB', '1DMB', '1ubq', '2gb1'] #Name used for plot and datalocation.
+Names=['1GZI']#, '1A2P', '1CEX', '1HCB', '1DMB', '1ubq', '2gb1'] #Name used for plot and datalocation.
 #Names=['1LDE', '1LLW','1RLC','2YP2','2ZKR','3S9I','3TTQ','3VUO','4AMC','4D94','4HOL'] #Name used for plot and datalocation.
 CS_pairs=['H','HA','N',"C", 'CA', 'CB']			#set of CS pairs that must exist in both datasets. 
 
@@ -37,36 +37,28 @@ def getE(t,d_e): #calculates total Energy difference of the two systems.
 	return E
 
 
-
-def is_small(i,j,n,value):
-	if value[i][1][n] < 0.5 and value[j][1][n] < 0.5:
-		return True
-	return False 
-
-def is_small_small(i,n,value):
-	if value[i][1][n] < 0.5: return True
-	return False
-	
-def getdE_part(t,i,d_e):		#get energy difference for interchanging i and j
+def getdE_part(t,i,d_e):		#get the current energy difference of t and d_e at site i.
 	dE=0
 	for n in range(len(CS_pairs)):
-		#if t[i][1][n] !=0 and d_e[i][1][n] !=0:
-		if not is_small_small(i,n,t) and not is_small_small(i,n,d_e):
+		try:
 			d=t[i][1][n]-d_e[i][1][n]
 			dE += (d**2) /(2 * CS_sigma[CS_pairs[n]]**2)
+		except TypeError:
+			pass
 	return dE
 
 
 def getdE(t,i,j,d_e):		#get energy difference for interchanging i and j
 	dE=0
 	for n in range(len(CS_pairs)):
-		#if t[i][1][n] > 1.0 and t[j][1][n] > 1.0 and d_e[i][1][n] > 1.0 and d_e[j][1][n] > 1.0:
-		if not is_small(i,j,n,t) and not is_small(i,j,n,d_e): 
+		try:
 			d_ij=t[i][1][n]-d_e[j][1][n]
 			d_ji=t[j][1][n]-d_e[i][1][n]
 			d_ii=t[i][1][n]-d_e[i][1][n]
 			d_jj=t[j][1][n]-d_e[j][1][n]
 			dE += ((d_ij)**2+(d_ji)**2-(d_ii)**2-(d_jj)**2) /(2 * CS_sigma[CS_pairs[n]]**2)
+		except TypeError:
+			pass
 	return dE
 
 def pair(t,d_e,d_t,d_le):		#t = a set of CS types to be used
@@ -79,15 +71,15 @@ def pair(t,d_e,d_t,d_le):		#t = a set of CS types to be used
 			try:
 				temp_e.append(float(d_e[(i, l)]))
 			except KeyError:
-				temp_e.append(0)
+				temp_e.append('N/A')
 			try:
 				temp_t.append(float(d_t[(i, l)]))
-			except KeyError:
+			except (KeyError, ValueError):
 				try:
 					l='HN'
 					temp_t.append(float(d_t[(i, l)]))
-				except KeyError:
-					temp_t.append(0)
+				except (KeyError, ValueError):
+					temp_t.append('N/A')
 
 		d__e[i]=temp_e
 		d__t[i]=temp_t
@@ -160,7 +152,7 @@ def run():
 				if flag!=True:				
 					if s%1000==0:
 						if float(E_[s-1]/E_[1*s/2])>0.99:
-							s=max(steps-1*s,1)
+							s=max(steps-s,1)
 							flag=True
 				if flag==True:
 					A=histogram(d_t,A,d_le)
@@ -170,7 +162,6 @@ def run():
 		savetxt(n+'_'+theory_input+'.txt',A)
 		energy.close()
 		i+=1
-		
 		pylab.figure(i)		#Plots total energy
 		pylab.plot(E_, marker='.', linestyle='None')
 		pylab.xlabel('steps')
