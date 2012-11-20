@@ -1,28 +1,15 @@
 from time import time
+from numpy import genfromtxt
 
-def lines(filename):				#Returns list_[lines][elements] from the source data.
-	data = open(filename, 'r')
-	#list_ = tuple()
-	list_=[]
-	for line in data:
-		list_.append(line.rsplit())
-		#list_+=(line,)
-	data.close()
-	return list_
-
-list_=lines('1CEX_shiftx2.txt')
-
-def histogram_element(list_):
+def histogram(name):
 	final=[]
 	count = 0
-	for element in range(len(list_[0])):
+	data=genfromtxt(name)
+	S=sum(data[0])
+	for i in range(len(data[0])):
 		hist={}
-		for line in list_:
-			s=line[element]
-			if s in hist:
-				hist[s] += 1
-			else:
-				hist[s] = 1
+		for j in range(len(data[0])):
+				hist[j]=data[j][i] #Dunno if (i,j) or (j,i) if it matters at all.
 		v=list(hist.values())
 		k=list(hist.keys())
 		final.append(int(k[v.index(max(v))]))
@@ -31,25 +18,9 @@ def histogram_element(list_):
 			count+=1
 	return final, count, len(final)
 
-def histogram_structure(list_):
-	hist={}
-	for line in list_:
-		s=line
-		if s in hist:
-			hist[s] += 1
-		else:
-			hist[s] = 1
-	v=list(hist.values())
-	k=list(hist.keys())
-	final= k[v.index(max(v))]
-	return final
-
-A=time()
-x,y,z= histogram_element(list_)
+x,y,z= histogram('1CEX_shiftx2.txt')
 
 
 print x
 print y,z,float(y)/z
-print time()-A
-#x=histogram_structure(list_)
-#print x
+

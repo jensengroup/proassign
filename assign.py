@@ -6,9 +6,9 @@ import reader
 #from time import time, clock
 
 
-steps=50000000
+steps=50000000 #maxsteps to be run
 repeat=1
-Names=['1GZI']#, '1A2P', '1CEX', '1HCB', '1DMB', '1ubq', '2gb1'] #Name used for plot and datalocation.
+Names=['1CEX']#'1GZI', '1A2P', '1CEX', '1HCB', '1DMB', '1ubq', '2gb1'] #Name used for plot and datalocation.
 #Names=['1LDE', '1LLW','1RLC','2YP2','2ZKR','3S9I','3TTQ','3VUO','4AMC','4D94','4HOL'] #Name used for plot and datalocation.
 CS_pairs=['H','HA','N',"C", 'CA', 'CB']			#set of CS pairs that must exist in both datasets. 
 
@@ -90,7 +90,7 @@ def pair(t,d_e,d_t,d_le):		#t = a set of CS types to be used
 	d__t.sort()
 	return d__e, d__t
 
-def histogram(d_t,A,d_le):
+def histogram(d_t,A,d_le): #slow. Can do faster but will use more hdd space and infinite ram to parse.
 	for l in range(d_le):
 		A[l,d_t[l][0]]+=1
 	return A
@@ -150,9 +150,9 @@ def run():
 					print percent,"%"'''
 				E_.append(E_tot)
 				if flag!=True:				
-					if s%1000==0:
+					if s%10000==0:
 						if float(E_[s-1]/E_[1*s/2])>0.99:
-							s=max(steps-s,1)
+							s=max(steps-5*s,1)
 							flag=True
 				if flag==True:
 					A=histogram(d_t,A,d_le)

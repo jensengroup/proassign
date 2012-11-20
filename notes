@@ -1,0 +1,32 @@
+http://nbcr-222.ucsd.edu/pdb2pqr_1.8/ smider H til pdb. Også ændre ph til hvad der står i str filen.
+shiftx2 bruger ph, T og smider H på.
+
+bmrb har statestik på kemiske skift af alle slags for alle aminosyrer. Det skal vel begrænse udvalget somehow. Det burde være muligt at assigne næsten alle eksperimentelle CS baseret på dette.
+
+
+stene lidt mere over sandsynligheder og scaling
+
+Tænke over en måde at lave en initial assortment.
+evt bruteforce f(N,s,x)
+forskellen mellem at udregne energi af alle, og så skifte. Og mellem at skifte for hver negativ energi
+evt kun tage ikke assignede punkter per iteration.
+
+
+fucker det op fordi man bruger random numbers til histogram. Hvis man kun gør det balanced, hvordan ser det så ud.
+
+
+kT forsvinder i bolzmann fordelingen? 
+
+regn max s og p x ud for balance metode
+
+(i, j) eller (j, i) i histogram.
+
+histogram can return multiple of the same position e.g. [7, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+maybe fix slow speed for the histogram part
+
+need to make the time the assigner runs consistent or at least a bit prettier.
+
+lol str file output
+
+camshifts
