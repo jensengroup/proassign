@@ -30,3 +30,5 @@ need to make the time the assigner runs consistent or at least a bit prettier.
 lol str file output
 
 camshifts
+
+maybe error after setting 0='N/A'
