@@ -9,7 +9,7 @@ def histogram(name):
 	for i in range(len(data[0])):
 		hist={}
 		for j in range(len(data[0])):
-				hist[j]=data[j][i] #Dunno if (i,j) or (j,i) if it matters at all.
+				hist[j]=data[i][j] #have double checked that it is not [j][i].
 		v=list(hist.values())
 		k=list(hist.keys())
 		final.append(int(k[v.index(max(v))]))
@@ -18,9 +18,10 @@ def histogram(name):
 			count+=1
 	return final, count, len(final)
 
-x,y,z= histogram('1CEX_shiftx2.txt')
-
-
-print x
-print y,z,float(y)/z
-
+A=[ '1A2P', '1CEX', '1DMB','1GZI', '1HCB', '1ubq', '2gb1']
+for i in A:
+	x,y,z= histogram(i+'_shiftx2.txt')
+	print i, y,z,float(y)/z
+	for l in range(z):
+		if l not in x:
+			1#print 'Error in most probable assignment: Multiples of same value. \n Value not found: %d' %l
