@@ -3,13 +3,13 @@ from numpy import exp, sqrt, pi, log, average, std, zeros, savetxt
 import pylab
 #import copy
 import reader
-#from time import time, clock
+from time import time, clock
 
 
-steps=50000000 #maxsteps to be run
+steps=20000000 #maxsteps to be run
 repeat=1
-Names=['1CEX']#'1GZI', '1A2P', '1CEX', '1HCB', '1DMB', '1ubq', '2gb1'] #Name used for plot and datalocation.
-#Names=['1LDE', '1LLW','1RLC','2YP2','2ZKR','3S9I','3TTQ','3VUO','4AMC','4D94','4HOL'] #Name used for plot and datalocation.
+Names=['1GZI', '1A2P', '1CEX', '1HCB', '1DMB', '1ubq', '2gb1'] #Name used for plot and datalocation.
+#Names=['1LLW']#'1LDE', '1LLW','1RLC','2YP2','2ZKR','3S9I','3TTQ','3VUO','4AMC','4D94','4HOL'] #Name used for plot and datalocation.
 CS_pairs=['H','HA','N',"C", 'CA', 'CB']			#set of CS pairs that must exist in both datasets. 
 
 
@@ -90,34 +90,34 @@ def pair(t,d_e,d_t,d_le):		#t = a set of CS types to be used
 	d__t.sort()
 	return d__e, d__t
 
-def histogram(d_t,A,d_le): #slow. Can do faster but will use more hdd space and infinite ram to parse.
+def histogram(d_t,A,d_le, count): #might be able to do faster if only i,j
 	for l in range(d_le):
-		A[l,d_t[l][0]]+=1
+		A[l,d_t[l][0]]+=count
 	return A
 
 def run():
 	i=0
 	for n in Names:
-		#data=open(n+'_'+theory_input+'.txt', 'w')
 		energy=open(n+'_'+theory_input+'_energy.txt', 'w')
 		if theory_input=='camshift':
-			d_t = reader.cam_(n+'.cam')	#camshift filename
+			d_t, d_le = reader.cam_(n+'.cam')	#camshift filename
 			CS_sigma=CS_sigma_cam
 		elif theory_input=='shiftx2':
-			d_t = reader.cs_(n+'.cs') # name of shiftx2 file
+			d_t,d_le = reader.cs_(n+'.cs') # name of shiftx2 file
 			CS_sigma=CS_sigma_cs
 		else:
 			print 'Error in theory_input'
 			break
 
 		d_e, structure, d_le = reader.str_(n+'.str') # name of srt file
-		#d_e=reader.cs_(n+'.cs')
-		#d_e, d_t = pair(CS_pairs,d_e, d_t,len(d_t))
-		
+		#d_e, d_le=reader.cs_(n+'.cs') #use if using synthetic data
+		d_e, d_t = pair(CS_pairs,d_e, d_t,d_le)
 		'''for d in d_t:			#Randomizes data with the default variances
 			for x in range(len(CS_pairs)):
-				d[1][x]=random.gauss(d[1][x],CS_sigma[CS_pairs[x]])'''
-		d_e, d_t = pair(CS_pairs,d_e, d_t,d_le)
+				try:
+					d[1][x]=random.gauss(d[1][x],CS_sigma[CS_pairs[x]])
+				except TypeError:
+					pass'''
 		A=zeros((d_le,d_le))
 		for r in range(repeat):
 			flag=False
@@ -128,35 +128,44 @@ def run():
 			E_tot=getE(d_t,d_e)-E_ini+1e-10		#infinitisimal to prevent later division by zero.
 			s=0
 			S=0
+			count=0
 			while s<steps:
+				#if s==40000000000:
+				#	flag=True
 				s+=1
 				S+=1
 				i, j = random.randint(0,len(d_t)-1), random.randint(0,len(d_t)-1)
 				dE=getdE(d_t,i,j,d_e)
 				if dE<=0:
+					if flag==True:
+						A=histogram(d_t,A,d_le,count)
 					E_before=getdE_part(d_t,i,d_e)+getdE_part(d_t,j,d_e)
 					d_t[i], d_t[j] = d_t[j], d_t[i]
 					E_after=getdE_part(d_t,i,d_e)+getdE_part(d_t,j,d_e)
 					E_tot+=E_after-E_before
+					count=1
 				else:
 					p=random.random()
 					if p<exp(-dE):
+						if flag==True:
+							A=histogram(d_t,A,d_le,count)
 						E_before=getdE_part(d_t,i,d_e)+getdE_part(d_t,j,d_e)
 						d_t[i], d_t[j] = d_t[j], d_t[i]
 						E_after=getdE_part(d_t,i,d_e)+getdE_part(d_t,j,d_e)
 						E_tot+=E_after-E_before
+						count=1
 				'''if 20*s%steps == 0:
 					percent+=5
 					print percent,"%"'''
 				E_.append(E_tot)
 				if flag!=True:				
 					if s%10000==0:
-						if float(E_[s-1]/E_[1*s/2])>0.99:
-							s=max(steps-5*s,1)
+						if float(E_[s-1]/E_[1*s/2])>0.995:
+							s=max(steps-2*s,1)
 							flag=True
-				if flag==True:
-					A=histogram(d_t,A,d_le)
-				energy.write(str(E_tot)+'\n')
+				count+=1
+
+				#energy.write(str(E_tot)+'\n')
 				if S%5000==0:
 					print S, n
 		savetxt(n+'_'+theory_input+'.txt',A)
@@ -166,9 +175,9 @@ def run():
 		pylab.plot(E_, marker='.', linestyle='None')
 		pylab.xlabel('steps')
 		pylab.ylabel('Energy difference')
-		pylab.ylim(min(E_)-abs(E_[-1]),abs(E_[-1]*10))
+		pylab.ylim(min(E_)-abs(E_[-1]),abs(E_[-1]*1000))
 		pylab.savefig('Assignment %s' %n)
 
-
+A=time()
 run()
-
+print time()-A
