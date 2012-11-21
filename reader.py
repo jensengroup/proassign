@@ -21,7 +21,7 @@ def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with
 					d.setdefault((int(list_[line][0])-1,list_[0][i]), 'N/A')
 		except IndexError:
 			pass
-	return d
+	return d, line
 
 
 def str_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with LESS unnecesary data :O
@@ -56,4 +56,4 @@ def cs_(filename):
 			else:
 				l+=1
 				d.setdefault((l,list_[line][3]), float(list_[line][4]))
-	return d
+	return d, l+1
