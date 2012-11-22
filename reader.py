@@ -15,7 +15,7 @@ def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with
 	for line in range(2,len(list_)):
 		try:
 			for i in range(2,len(list_[2])):
-				if float(list_[line][i])!=0:
+				if float(list_[line][i])!=0 and float(list_[line][i])!='-nan':
 					d.setdefault((line-2,list_[0][i]), list_[line][i])
 				else:
 					d.setdefault((int(list_[line][0])-1,list_[0][i]), 'N/A')
