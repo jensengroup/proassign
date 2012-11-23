@@ -24,7 +24,6 @@ def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with
 		if list_[line][1]=='GLY' and float(list_[line][2])!=0: #second criteria prevents that the first and last element in camshift gets edited if it's all zero.
 			d[(line-2,'CB')]= -100		#sets CB to -100. This makes sure that all GLY gets paired together.
 		if list_[line][1]=='PRO' and float(list_[line][2])!=0: #float due to camshift being unconsistant with these things for some reason.
-			print list_[line][2]
 			d[(line-2,'H')]= -100
 			d[(line-2,'N')]= -100
 	return d, line-1
