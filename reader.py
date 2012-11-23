@@ -75,12 +75,3 @@ def cs_(filename):
 			d[l,'H']=-100
 			d[l,'N']=-100
 	return d, l+1
-
-A,L_A=cs_('1HCB.cs')
-B,L_B=cam_('1HCB.cam')
-C,structure, L_C=str_('1HCB.str')
-
-print L_A, L_B, L_C
-print A[(0,'H')],A[(2,'HA')], A[(2,'CB')], A[(37,'C')], A[(37,'H')], A[(37,'N')]
-print B[(0,'H')],B[(2,'HA')], B[(2,'CB')], B[(37,'C')], B[(37,'H')], B[(37,'N')]
-print C[(0,'H')],C[(2,'HA')], C[(2,'CB')], C[(37,'C')], C[(37,'H')], C[(37,'N')]
