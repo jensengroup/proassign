@@ -1,5 +1,7 @@
 from numpy import *
 
+### Most of the N/A statements are in here in addition to the pair function in assign.py to be able to force gly / pro into place by e.g. putting '-100' instead. But non-complete CS pairs in the bmrb database messes that idea up.
+
 def lines(filename):				#Returns list_[lines][elements] from the source data.
 	data = open(filename, 'r')
 	list_ = []
@@ -9,7 +11,7 @@ def lines(filename):				#Returns list_[lines][elements] from the source data.
 	return list_
 
 
-def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with some unnecesary data.
+def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}
 	list_=lines(filename)
 	d={}
 	for line in range(2,len(list_)):
@@ -22,14 +24,14 @@ def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with
 			else:
 				d[(line-2,l)]= 'N/A'
 		if list_[line][1]=='GLY' and float(list_[line][2])!=0: #second criteria prevents that the first and last element in camshift gets edited if it's all zero.
-			d[(line-2,'CB')]= -100		#sets CB to -100. This makes sure that all GLY gets paired together.
+			d[(line-2,'CB')]= 'N/A'		#sets CB to 'N/A'.
 		if list_[line][1]=='PRO' and float(list_[line][2])!=0: #float due to camshift being unconsistant with these things for some reason.
-			d[(line-2,'H')]= -100
-			d[(line-2,'N')]= -100
+			d[(line-2,'H')]= 'N/A'
+			d[(line-2,'N')]= 'N/A'
 	return d, line-1
 
 
-def str_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with LESS unnecesary data :O
+def str_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}.
 	list_=lines(filename)
 	d={}
 	structure=[]
@@ -45,12 +47,12 @@ def str_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}, with
 				l+=1
 				d[(l,list_[line][7])]= float(list_[line][10])
 				structure.append(list_[line][6])
-		if list_[line][6]=='GLY' and  list_[line][7]=='HA3':#Have no idea what the HA entry in cs files is, since there is HA, HA2 AND HA3 values listed. So I use HA3 as HA for GLY.
+		if list_[line][6]=='GLY' and  list_[line][7]=='HA3':# Forces HA3 as HA for GLY in the BMRB file.
 			d[l,'HA']= d[l,'HA3']
-			d[l,'CB']=-100
+			d[l,'CB']='N/A'
 		if list_[line][6]=='PRO':
-			d[l,'H']=-100
-			d[l,'N']=-100
+			d[l,'H']='N/A'
+			d[l,'N']='N/A'
 	return d, structure, l+1
 
 
@@ -69,8 +71,8 @@ def cs_(filename):
 				d[l,list_[line][3]]= float(list_[line][4])
 		if list_[line][2]=='GLY' and  list_[line][3]=='HA3':#Have no idea what the HA entry in cs files is, since there is HA, HA2 AND HA3 values listed. So I use HA3 as HA for GLY.
 			d[l,'HA']= d[l,'HA3']
-			d[l,'CB']=-100
+			d[l,'CB']='N/A'
 		if list_[line][2]=='PRO':
-			d[l,'H']=-100
-			d[l,'N']=-100
+			d[l,'H']='N/A'
+			d[l,'N']='N/A'
 	return d, l+1
