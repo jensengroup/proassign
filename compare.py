@@ -1,8 +1,8 @@
 import re
 
-cam_name='1CEX.cam'
-str_name='1CEX.str'
-cs_name='1CEX.cs'
+cam_name='1A2P.cam'
+str_name='1A2P.str'
+cs_name='1A2P.cs'
 
 [ '1A2P', '1CEX', '1DMB','1GZI', '1HCB', '1ubq', '2gb1']
 
