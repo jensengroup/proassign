@@ -23,6 +23,16 @@ def read(filename):
 		d.append(l)
 	return d
 
+def sequence_(filename):
+	sequence=[]
+	list_=lines(filename)
+	for i in list_:
+		for l in i:
+			for n in l:
+				sequence.append(n)
+	return sequence
+
+
 def cam_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}
 	list_=lines(filename)
 	d={}
@@ -80,6 +90,28 @@ def cs_(filename):
 		if list_[line][2]=='GLY' and  list_[line][3]=='HA':#Have no idea what the HA entry in cs files is, since there is HA, HA2 AND HA3 values listed. 
 			d[l,'HA']= 'N/A'
 	return d,l+1
+
+
+
+def AA_(filename):			#outputs a temporary file of {(res.no, CS_type): CS}.
+	list_=lines(filename)
+	d={}
+	structure=[]
+	for line in range(len(list_)):
+		if line==0:
+			d[(line,list_[line][5])]= float(list_[line][8])
+			structure.append(list_[line][4])
+			l=0
+		else:
+			if list_[line][3] == list_[line-1][3]:
+				d[(l,list_[line][5])]= float(list_[line][8])
+			else:
+				l+=1
+				d[(l,list_[line][5])]= float(list_[line][8])
+				structure.append(list_[line][4])
+	return d,l+1
+
+
 
 def HSQC_make(HSQC):
 	t=[]
@@ -155,16 +187,22 @@ def HNcoHA_make(HNcoHA):
 	return t
 
 
-steps=2000000 #maxsteps to be run
+steps=300001 #maxsteps to be run
 
 Names=['2L15'] 
-theory_input='BMRB' # 'BMRB', 'shiftx2' or 'camshift'
+theory_input='AA' # 'BMRB', 'shiftx2' or 'camshift'
 CS_pairs=['H', 'HA', 'HA2', 'HA3', 'N', 'C', 'CA', 'CB']
-CS_sigma_cam={'H':0.56,'HA':0.28,'HA2':0.28,'HA3':0.28,'N':3.01,'C':1.38, 'CA':1.3, 'CB':1.36}		#dictionary with value=variance for key=CS type. #Kohlhoff 2009
+CS_sigma_cam={'N':1.12, 'CA':0.44, 'CB':0.52, 'C':0.98, 'HA':0.12,'HA2':0.12,'HA3':0.12, 'H':0.17}#{'H':0.56,'HA':0.28,'HA2':0.28,'HA3':0.28,'N':3.01,'C':1.38, 'CA':1.3, 'CB':1.36}		#dictionary with value=variance for key=CS type. #Kohlhoff 2009
 CS_sigma_cs={'N':1.12, 'CA':0.44, 'CB':0.52, 'C':0.98, 'HA':0.12,'HA2':0.12,'HA3':0.12, 'H':0.17} 	#shiftx2, CD and CG variance set to same as similar shift types, Han, B  Liu, Y, 2011
 CS_sigma_xp={'N':0.1, 'CA':0.1, 'CB':0.1, 'C':0.1, 'HA':0.02,'HA2':0.02,'HA3':0.02, 'H':0.02}
+CS_sigma_AA={'N':0.1, 'CA':0.1, 'CB':0.1, 'C':0.1, 'HA':0.02,'HA2':0.02,'HA3':0.02, 'H':0.02}
 
-spin_systems=['HSQC','HNCO','HNcoCA'] #HA for gly
+spin_systems=['HSQC','HNCO','HNcoCA','HNcoHA'] #HA for gly
+sequence=sequence_('cspa/sequence.txt')
+
+move_single_percentage=0.05
+
+
 
 #######################################################################
 
@@ -237,6 +275,9 @@ elif theory_input=='shiftx2':
 	CS_sigma=CS_sigma_cs
 elif theory_input=='BMRB':
 	CS_sigma=CS_sigma_xp
+elif theory_input=='AA':
+	CS_sigma=CS_sigma_AA
+
 
 
 def get_average(t,i,T,k=False,j=False):
@@ -275,17 +316,17 @@ def get_average(t,i,T,k=False,j=False):
 
 	
 
-def getE(t,d,L): #calculates total energy difference of the two systems. 
+def getE(t,d,r): #calculates total energy difference of the two systems. 
 	E=0
 	T=[]
-	for m in L:
+	for m in r:
 		t_=[]
 		for l in range(len(t)):
 			for n in range(l):
 				if n!=l:
 					E+=getE_part(t[l][m],t[n][m],CS_sigma_xp)
 		T=get_average(t,m,T)
-	for i in range(len(L)):
+	for i in range(len(r)):
 		s=d_make(d,i)
 		E+=getE_part(T[i],s)
 	return E
@@ -328,7 +369,7 @@ def set_length(t,d,le):
 	for l in t:
 		t_=l
 		if len(l)<le:
-			count=le-len(l)
+			count=le-len(l)	
 			for n in range(count):
 				temp=[]
 				for i in range(len(l[0])):
@@ -381,102 +422,138 @@ def determine_bias(t):
 			bias.append(False)
 	return bias
 
-def getdE(t,d,i,j,k=False):		#get energy difference for interchanging i and j
+'''def getdE_change_HA(t,d,i,j,k):
+	p=random.randint(2,3)
+	dE=0
+	if spin_systems[k]=='HNHA' or spin_systems[k]=='HNcoHA':
+		for n in range(len(CS_pairs)):
+			if CS_pairs[n]=='HA':
+				for l in range(len(CS_pairs)):
+					if CS_pairs[l]='HA2':
+						for m in range(len(t)):
+							for m!=HNcoHA_index:
+								if t[m][i][n]!='N/A' and t[HNcoHA_index][i][n]!='N/A' #eliminating the bias will make dE=0 for every HA->HA2 move.
+								dE+=getE_part(t[m][i],t[HNcoHA_index][i],CS_sigma_xp)
+						
+						r[k][i]=t[k][i][:]
+						r[k][i][l], r[k][i][j]=r[k][i][l], 'N/A'
+						getE_part(r[k][i]'''
+
+
+
+def getdE_move(t,d,i,j,k):		#get energy difference for interchanging i and j
+	dE=0
+	try:
+		if sequence[i]!='G':
+			if sequence[j]!='G':
+				dE=getdE_move_single(t,d,i,j,k)
+				return dE
+			else:
+				i,j=j,i
+		else:
+			if sequence[j]!='G':
+				pass
+			else:
+				1
+	except IndexError:
+		pass
+	
+	return 
+
+def getdE_move_single(t,d,i,j,k):		#get energy difference for interchanging i and j
 	dE=0
 	bias=[]
 	T=[]
 	s=[]
-	if k!=False:
-		for l in range(len(t)):
-			bias.append(determine_bias_spin(t[l][i]))
-			bias.append(determine_bias_spin(t[l][j]))
-		for l in range(len(t)):
-			if l!=k:
-				if bias[2*k]==[2*k+1]:
-					if bias[2*k]==False:
-						pass
-					else:
-						dE+=getdE_part(t[l],t[k],i,j,CS_sigma_xp)
+	for l in range(len(t)):
+		bias.append(determine_bias_spin(t[l][i]))
+		bias.append(determine_bias_spin(t[l][j]))
+	for l in range(len(t)):
+		if l!=k:
+			if bias[2*k]==[2*k+1]:
+				if bias[2*k]==False:
+					pass
 				else:
 					dE+=getdE_part(t[l],t[k],i,j,CS_sigma_xp)
-					if bias[2*l]==bias[2*l+1]:
-						pass
-					else:
-						if bias[2*k]==True and bias[2*l]==False:
-							dE-=getE_part(t[l][j],t[k][i],CS_sigma_xp)
-						elif bias[2*k]==True and bias[2*l]==True:
-							dE+=getE_part(t[l][i],t[k][i],CS_sigma_xp)
-						elif bias[2*k]==False and bias[2*l]==True:
-							dE-=getE_part(t[l][i],t[k][j],CS_sigma_xp)
-						else:
-							dE+=getE_part(t[l][j],t[k][j],CS_sigma_xp)
-		
-		T=get_average(t,i,T,k,j) #Tij
-		T=get_average(t,j,T,k,i)#Tji
-		T=get_average(t,i,T,k,i)#Tii
-		T=get_average(t,j,T,k,j)#Tjj
-		s.append(d_make(d,i))
-		s.append(d_make(d,j))
-
-		bias=[]
-		bias.append(determine_bias(T[0]))
-		bias.append(determine_bias(T[1]))
-		bias.append(determine_bias(T[2]))
-		bias.append(determine_bias(T[3]))
-		bias.append(determine_bias(s[0]))
-		bias.append(determine_bias(s[1]))
-
-		dE+=getE_part(T[0],s[0])+getE_part(T[1],s[1])-getE_part(T[2],s[0])-getE_part(T[3],s[0])
-		for l in range(len(T[0])):
-			n=bias[0][l]*bias[4][l]+bias[1][l]*bias[5][l]-bias[2][l]*bias[4][l]-bias[3][l]*bias[5][l]
-			if n==0:
-				pass
-			elif n==2:
-				dE+=-getE_part([T[0][l]],[s[0][l]])-getE_part([T[1][l]],[s[1][l]])
-			elif n==-2:
-				dE+=getE_part([T[2][l]],[s[0][l]])+getE_part([T[3][l]],[s[1][l]])
-			elif n==1:
-				if bias[0][l]==True:
-					dE+=-getE_part([T[0][l]],[s[0][l]])
-				else:
-					dE+=-getE_part([T[1][l]],[s[1][l]])
 			else:
-				if bias[2][l]==True:
-					dE+=getE_part([T[2][l]],[s[0][l]])
+				dE+=getdE_part(t[l],t[k],i,j,CS_sigma_xp)
+				if bias[2*l]==bias[2*l+1]:
+					pass
 				else:
-					dE+=getE_part([T[3][l]],[s[1][l]])
-	else:
+					if bias[2*k]==True and bias[2*l]==False:
+						dE-=getE_part(t[l][j],t[k][i],CS_sigma_xp)
+					elif bias[2*k]==True and bias[2*l]==True:
+						dE+=getE_part(t[l][i],t[k][i],CS_sigma_xp)
+					elif bias[2*k]==False and bias[2*l]==True:
+						dE-=getE_part(t[l][i],t[k][j],CS_sigma_xp)
+					else:
+						dE+=getE_part(t[l][j],t[k][j],CS_sigma_xp)
+	T=get_average(t,i,T,k,j) #Tij
+	T=get_average(t,j,T,k,i)#Tji
+	T=get_average(t,i,T,k,i)#Tii
+	T=get_average(t,j,T,k,j)#Tjj
+	s.append(d_make(d,i))
+	s.append(d_make(d,j))
 
-		T=get_average(t,i,T) #Ti
-		T=get_average(t,j,T)#Tj
+	bias=[]
+	bias.append(determine_bias(T[0]))
+	bias.append(determine_bias(T[1]))
+	bias.append(determine_bias(T[2]))
+	bias.append(determine_bias(T[3]))
+	bias.append(determine_bias(s[0]))
+	bias.append(determine_bias(s[1]))
+
+	dE+=getE_part(T[0],s[1])+getE_part(T[1],s[0])-getE_part(T[2],s[0])-getE_part(T[3],s[1])
+	for l in range(len(T[0])):
+		n=bias[0][l]*bias[4][l]+bias[1][l]*bias[5][l]-bias[2][l]*bias[4][l]-bias[3][l]*bias[5][l]
+		if n==0:
+			pass
+		elif n==2:
+			dE+=-getE_part([T[0][l]],[s[1][l]])-getE_part([T[1][l]],[s[0][l]])
+		elif n==-2:
+			dE+=getE_part([T[2][l]],[s[0][l]])+getE_part([T[3][l]],[s[1][l]])
+		elif n==1:
+			if bias[0][l]*bias[1][l]==True:
+				dE+=-getE_part([T[0][l]],[s[0][l]])
+			else:
+				dE+=-getE_part([T[1][l]],[s[1][l]])
+		else:
+			if bias[2][l]==True:
+				dE+=getE_part([T[2][l]],[s[0][l]])
+			else:
+				dE+=getE_part([T[3][l]],[s[1][l]])
+	return dE
+
+def getdE_move_all(t,d,i,j):
+	T=[]
+	s=[]
+	dE=0
+	T=get_average(t,i,T) #Ti
+	T=get_average(t,j,T)#Tj
 
 
-		s.append(d_make(d,i))
-		s.append(d_make(d,j))
+	s.append(d_make(d,i))
+	s.append(d_make(d,j))
 
-		bias=[]
-		bias.append(determine_bias(T[0]))
-		bias.append(determine_bias(T[1]))
-		bias.append(determine_bias(s[0]))
-		bias.append(determine_bias(s[1]))
+	bias=[]
+	bias.append(determine_bias(T[0]))
+	bias.append(determine_bias(T[1]))
+	bias.append(determine_bias(s[0]))
+	bias.append(determine_bias(s[1]))
 
-		dE+=getE_part(T[0],s[1])+getE_part(T[1],s[0])-getE_part(T[0],s[0])-getE_part(T[1],s[1])
-		for l in range(len(T[0])):
-			if T[0][l] == True and d[0][l]==True and T[1][l]==False and d[1][l]==False:
-				dE+=getE_part([T[0][l]],[d[0][l]])
-			elif T[0][l] == False and d[0][l]==False and T[1][l]==True and d[1][l]==True:
-				dE+=getE_part([T[1][l]],[d[1][l]])
-			elif T[0][l] == True and d[0][l]==False and T[1][l]==False and d[1][l]==True:
-				dE-=getE_part([T[0][l]],[d[1][l]])
-			elif T[0][l] == False and d[0][l]==True and T[1][l]==True and d[1][l]==False:
-				dE+=getE_part([T[1][l]],[d[0][l]])		
+	dE+=getE_part(T[0],s[1])+getE_part(T[1],s[0])-getE_part(T[0],s[0])-getE_part(T[1],s[1])
+	for l in range(len(T[0])):
+		if T[0][l] == True and d[0][l]==True and T[1][l]==False and d[1][l]==False:
+			dE+=getE_part([T[0][l]],[d[0][l]])
+		elif T[0][l] == False and d[0][l]==False and T[1][l]==True and d[1][l]==True:
+			dE+=getE_part([T[1][l]],[d[1][l]])
+		elif T[0][l] == True and d[0][l]==False and T[1][l]==False and d[1][l]==True:
+			dE-=getE_part([T[0][l]],[d[1][l]])
+		elif T[0][l] == False and d[0][l]==True and T[1][l]==True and d[1][l]==False:
+			dE+=getE_part([T[1][l]],[d[0][l]])		
 			
 	return dE
 
-def histogram(d_t,A,d_le, count): #The most probable assignment of the first residue will be the maximum value of row 0 (A[0,:]).
-	for l in range(d_le):
-		A[l,d_t[l][0]]+=count
-	return A
 
 if __name__ == '__main__':
 	def run():
@@ -485,17 +562,16 @@ if __name__ == '__main__':
 
 			if theory_input=='BMRB':
 				d,d_le = str_(n+'.str')	#BMRB filename
-				CS_sigma=CS_sigma_xp
 			elif theory_input=='camshift':
 				d,d_le = cam_(n+'.cam')	#camshift filename
-				CS_sigma=CS_sigma_cam
 			elif theory_input=='shiftx2':
 				d,d_le = cs_(n+'.cs') # name of shiftx2 file
-				CS_sigma=CS_sigma_cs
+			elif theory_input=='AA':
+				d,d_le = AA_(n+'_AA.str') # name of AA file
 			else:
 				print 'Error in theory_input'
 				break
-			
+
 			d=pair(CS_pairs,d,d_le)
 			t=spin_make()
 			le=max_length(t,d)
@@ -509,15 +585,15 @@ if __name__ == '__main__':
 			for i in range(le):
 				T=get_average(t,i,T)
 			print E_tot
-			count=0
 			B=getE([T],d,L)
 			print B
 			for s in range(1,steps):
 				n=random.random()
 				i, j = random.randint(0,le-1), random.randint(0,le-1)
-				if n<0.01:
+				
+				if n<move_single_percentage:
 					k=random.randint(0,len(t)-1)
-					dE=getdE(t,d,i,j,k)
+					dE=getdE_move_single(t,d,i,j,k)
 					if dE<=0:
 						E_before=getE(t,d,[i,j])
 						t[k][i], t[k][j] = t[k][j], t[k][i]
@@ -531,8 +607,8 @@ if __name__ == '__main__':
 							E_after=getE(t,d,[i,j])
 							E_tot+=E_after-E_before
 				else:
-					dE=getdE(t,d,i,j)
-					if dE<0:
+					dE=getdE_move_all(t,d,i,j)
+					if dE<=0:
 						E_before=getE(t,d,[i,j])
 						for m in range(len(t)):
 							t[m][i], t[m][j] = t[m][j], t[m][i]
@@ -541,7 +617,7 @@ if __name__ == '__main__':
 					
 					else:
 						p=random.random()
-						if p<0:#exp(-dE):
+						if p<exp(-dE):
 							E_before=getE(t,d,[i,j])
 							for m in range(len(t)):
 								t[m][i], t[m][j] = t[m][j], t[m][i]
@@ -556,16 +632,20 @@ if __name__ == '__main__':
 						T=get_average(t,i,T)
 					B=getE([T],d,L)
 					print B
-				'''if s%300000==0:
+				if s%300000==0:
 					i+=1
 					pylab.figure(i)		#Plots total energy
 					pylab.plot(E_, marker='.', linestyle='None')
-					#pylab.ylim(min(E_)-abs(min(E_))*1.5,abs(max(E_[s/2:]))*1.1)
-					pylab.show()'''
-			T=[]
+					#pylab.ylim(555000,565000)
+					pylab.show()
 			
 		return T,d
 
 	A=time()
 	T,d=run()
+	for i in range(len(T[:])):
+		for l in range(len(T[:][i])):
+			x,y= T[:][i][l],  d_make(d,l)[l]
+			if x!='N/A' and y!='N/A':
+				print x,y
 	print time()-A
