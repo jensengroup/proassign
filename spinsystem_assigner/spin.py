@@ -3,6 +3,7 @@ from numpy import exp, sqrt, pi, log, average, std, zeros, savetxt, mean
 import pylab
 import copy
 from time import time, clock
+import create_spins_from_bmrb
 
 def lines(filename):				#Returns list_[lines][elements] from the source data.
 	data = open(filename, 'r')
@@ -187,20 +188,20 @@ def HNcoHA_make(HNcoHA):
 	return t
 
 
-steps=300001 #maxsteps to be run
+steps=50001 #maxsteps to be run
 
 Names=['2L15'] 
-theory_input='AA' # 'BMRB', 'shiftx2' or 'camshift'
+theory_input='BMRB' # 'BMRB', 'shiftx2' or 'camshift'
 CS_pairs=['H', 'HA', 'HA2', 'HA3', 'N', 'C', 'CA', 'CB']
 CS_sigma_cam={'N':1.12, 'CA':0.44, 'CB':0.52, 'C':0.98, 'HA':0.12,'HA2':0.12,'HA3':0.12, 'H':0.17}#{'H':0.56,'HA':0.28,'HA2':0.28,'HA3':0.28,'N':3.01,'C':1.38, 'CA':1.3, 'CB':1.36}		#dictionary with value=variance for key=CS type. #Kohlhoff 2009
 CS_sigma_cs={'N':1.12, 'CA':0.44, 'CB':0.52, 'C':0.98, 'HA':0.12,'HA2':0.12,'HA3':0.12, 'H':0.17} 	#shiftx2, CD and CG variance set to same as similar shift types, Han, B  Liu, Y, 2011
 CS_sigma_xp={'N':0.1, 'CA':0.1, 'CB':0.1, 'C':0.1, 'HA':0.02,'HA2':0.02,'HA3':0.02, 'H':0.02}
 CS_sigma_AA={'N':0.1, 'CA':0.1, 'CB':0.1, 'C':0.1, 'HA':0.02,'HA2':0.02,'HA3':0.02, 'H':0.02}
 
-spin_systems=['HSQC','HNCO','HNcoCA','HNcoHA'] #HA for gly
+spin_systems=['HSQC','HNCO','HNcoCA']#,'HNcoHA'] #HA for gly
 sequence=sequence_('cspa/sequence.txt')
 
-move_single_percentage=0.05
+move_single_percentage=0.5
 
 
 
@@ -280,11 +281,11 @@ elif theory_input=='AA':
 
 
 
-def get_average(t,i,T,k=False,j=False):
+def get_average(t,i,T,k=-1,j=-1):
 	t_=[]
-	for m in range(len(t[0][0])):
+	for m in range(len(CS_pairs)*2):
 		temp=[]
-		if k==False:
+		if j==-1 or k==-1:
 			for l in t:
 				try:
 					temp.append(float(l[i][m]))
@@ -327,7 +328,7 @@ def getE(t,d,r): #calculates total energy difference of the two systems.
 					E+=getE_part(t[l][m],t[n][m],CS_sigma_xp)
 		T=get_average(t,m,T)
 	for i in range(len(r)):
-		s=d_make(d,i)
+		s=d_make(d,r[i])
 		E+=getE_part(T[i],s)
 	return E
 
@@ -460,8 +461,9 @@ def getdE_move(t,d,i,j,k):		#get energy difference for interchanging i and j
 	
 	return 
 
-def getdE_move_single(t,d,i,j,k):		#get energy difference for interchanging i and j
+def getdE_move_single(t,d,i,j,k):		#get energy difference for interchanging i and j ##check i haanden forskellen paa 
 	dE=0
+	dB=0
 	bias=[]
 	T=[]
 	s=[]
@@ -481,20 +483,19 @@ def getdE_move_single(t,d,i,j,k):		#get energy difference for interchanging i an
 					pass
 				else:
 					if bias[2*k]==True and bias[2*l]==False:
-						dE-=getE_part(t[l][j],t[k][i],CS_sigma_xp)
+						dB-=getE_part(t[l][j],t[k][i],CS_sigma_xp)
 					elif bias[2*k]==True and bias[2*l]==True:
-						dE+=getE_part(t[l][i],t[k][i],CS_sigma_xp)
+						dB+=getE_part(t[l][i],t[k][i],CS_sigma_xp)
 					elif bias[2*k]==False and bias[2*l]==True:
-						dE-=getE_part(t[l][i],t[k][j],CS_sigma_xp)
+						dB-=getE_part(t[l][i],t[k][j],CS_sigma_xp)
 					else:
-						dE+=getE_part(t[l][j],t[k][j],CS_sigma_xp)
-	T=get_average(t,i,T,k,j) #Tij
+						dB+=getE_part(t[l][j],t[k][j],CS_sigma_xp)
+	T=get_average(t,i,T,k,j)#Tij
 	T=get_average(t,j,T,k,i)#Tji
-	T=get_average(t,i,T,k,i)#Tii
-	T=get_average(t,j,T,k,j)#Tjj
+	T=get_average(t,i,T)#Tii
+	T=get_average(t,j,T)#Tjj
 	s.append(d_make(d,i))
 	s.append(d_make(d,j))
-
 	bias=[]
 	bias.append(determine_bias(T[0]))
 	bias.append(determine_bias(T[1]))
@@ -502,32 +503,32 @@ def getdE_move_single(t,d,i,j,k):		#get energy difference for interchanging i an
 	bias.append(determine_bias(T[3]))
 	bias.append(determine_bias(s[0]))
 	bias.append(determine_bias(s[1]))
-
-	dE+=getE_part(T[0],s[1])+getE_part(T[1],s[0])-getE_part(T[2],s[0])-getE_part(T[3],s[1])
+	dE+=getE_part(T[0],s[0])+getE_part(T[1],s[1])-getE_part(T[2],s[0])-getE_part(T[3],s[1])
 	for l in range(len(T[0])):
 		n=bias[0][l]*bias[4][l]+bias[1][l]*bias[5][l]-bias[2][l]*bias[4][l]-bias[3][l]*bias[5][l]
 		if n==0:
 			pass
 		elif n==2:
-			dE+=-getE_part([T[0][l]],[s[1][l]])-getE_part([T[1][l]],[s[0][l]])
+			dB+=-getE_part([T[0][l]],[s[1][l]])-getE_part([T[1][l]],[s[0][l]])
 		elif n==-2:
-			dE+=getE_part([T[2][l]],[s[0][l]])+getE_part([T[3][l]],[s[1][l]])
+			dB+=getE_part([T[2][l]],[s[0][l]])+getE_part([T[3][l]],[s[1][l]])
 		elif n==1:
 			if bias[0][l]*bias[1][l]==True:
-				dE+=-getE_part([T[0][l]],[s[0][l]])
+				dB+=-getE_part([T[0][l]],[s[0][l]])
 			else:
-				dE+=-getE_part([T[1][l]],[s[1][l]])
+				dB+=-getE_part([T[1][l]],[s[1][l]])
 		else:
 			if bias[2][l]==True:
-				dE+=getE_part([T[2][l]],[s[0][l]])
+				dB+=getE_part([T[2][l]],[s[0][l]])
 			else:
-				dE+=getE_part([T[3][l]],[s[1][l]])
-	return dE
+				dB+=getE_part([T[3][l]],[s[1][l]])
+	return dE+dB, dE
 
 def getdE_move_all(t,d,i,j):
 	T=[]
 	s=[]
 	dE=0
+	dB=0
 	T=get_average(t,i,T) #Ti
 	T=get_average(t,j,T)#Tj
 
@@ -544,15 +545,15 @@ def getdE_move_all(t,d,i,j):
 	dE+=getE_part(T[0],s[1])+getE_part(T[1],s[0])-getE_part(T[0],s[0])-getE_part(T[1],s[1])
 	for l in range(len(T[0])):
 		if T[0][l] == True and d[0][l]==True and T[1][l]==False and d[1][l]==False:
-			dE+=getE_part([T[0][l]],[d[0][l]])
+			dB+=getE_part([T[0][l]],[d[0][l]])
 		elif T[0][l] == False and d[0][l]==False and T[1][l]==True and d[1][l]==True:
-			dE+=getE_part([T[1][l]],[d[1][l]])
+			dB+=getE_part([T[1][l]],[d[1][l]])
 		elif T[0][l] == True and d[0][l]==False and T[1][l]==False and d[1][l]==True:
-			dE-=getE_part([T[0][l]],[d[1][l]])
+			dB-=getE_part([T[0][l]],[d[1][l]])
 		elif T[0][l] == False and d[0][l]==True and T[1][l]==True and d[1][l]==False:
-			dE+=getE_part([T[1][l]],[d[0][l]])		
+			dB+=getE_part([T[1][l]],[d[0][l]])		
 			
-	return dE
+	return dE+dB, dE
 
 
 if __name__ == '__main__':
@@ -573,6 +574,8 @@ if __name__ == '__main__':
 				break
 
 			d=pair(CS_pairs,d,d_le)
+
+			#create_spins_from_bmrb.HSQC(d,CS_pairs)
 			t=spin_make()
 			le=max_length(t,d)
 			t,d=set_length(t,d,le)
@@ -580,59 +583,80 @@ if __name__ == '__main__':
 				random.shuffle(t[i])
 			E_=[]
 			L=range(len(t[0]))
-			E_tot=getE(t,d,L)
+			E_tot=getE(t,d,L)		
 			T=[]
 			for i in range(le):
 				T=get_average(t,i,T)
-			print E_tot
 			B=getE([T],d,L)
-			print B
+			print 0, E_tot, B
+			count_1=0
+			count_2=0
+			count_3=0
+			count_4=0
 			for s in range(1,steps):
 				n=random.random()
 				i, j = random.randint(0,le-1), random.randint(0,le-1)
 				
 				if n<move_single_percentage:
+					count_1+=1
 					k=random.randint(0,len(t)-1)
-					dE=getdE_move_single(t,d,i,j,k)
+					dE,dE_tot=getdE_move_single(t,d,i,j,k)
 					if dE<=0:
-						E_before=getE(t,d,[i,j])
+						count_2+=1
+						#E_before=getE(t,d,[i,j])
 						t[k][i], t[k][j] = t[k][j], t[k][i]
-						E_after=getE(t,d,[i,j])
-						E_tot+=E_after-E_before
+						#E_after=getE(t,d,[i,j])
+						#E_tot+=E_after-E_before
+						E_tot+=dE_tot
+						#if round(dE_tot,3)!=round(E_after-E_before,3):
+						#	print dE_tot, E_after-E_before
 					else:
 						p=random.random()
-						if p<exp(-dE):
-							E_before=getE(t,d,[i,j])
+						if p<exp(-dE/20):
+							count_2+=1
+							#E_before=getE(t,d,[i,j])
 							t[k][i], t[k][j] = t[k][j], t[k][i]
-							E_after=getE(t,d,[i,j])
-							E_tot+=E_after-E_before
+							#E_after=getE(t,d,[i,j])
+							#E_tot+=E_after-E_before
+							E_tot+=dE_tot
 				else:
-					dE=getdE_move_all(t,d,i,j)
+					count_3+=1
+					dE,dB=getdE_move_all(t,d,i,j)
 					if dE<=0:
-						E_before=getE(t,d,[i,j])
+						count_4+=1
+						#E_before=getE(t,d,[i,j])
 						for m in range(len(t)):
 							t[m][i], t[m][j] = t[m][j], t[m][i]
-						E_after=getE(t,d,[i,j])
-						E_tot+=E_after-E_before
-					
+						#E_after=getE(t,d,[i,j])
+						#E_tot+=E_after-E_before
+						E_tot+=dE_tot
 					else:
 						p=random.random()
-						if p<exp(-dE):
-							E_before=getE(t,d,[i,j])
+						if p<exp(-dE/20):
+							count_4+=1
+							#E_before=getE(t,d,[i,j])
 							for m in range(len(t)):
 								t[m][i], t[m][j] = t[m][j], t[m][i]
-							E_after=getE(t,d,[i,j])
-							E_tot+=E_after-E_before
+							#E_after=getE(t,d,[i,j])
+							#E_tot+=E_after-E_before
+							E_tot+=dE_tot
 				E_.append(E_tot)
+				#if s>10:
+				#	if E_[-1]>E_[-2]:
+				#		print 'Error'
 				if s%5000==0:
+
 					T=[]
-					E_tot=getE(t,d,L)
-					print s, E_tot
+					#E_t=getE(t,d,L)
 					for i in range(le):
 						T=get_average(t,i,T)
 					B=getE([T],d,L)
-					print B
-				if s%300000==0:
+					print s, E_tot, B, float(count_2)/count_1, float(count_4)/count_3
+					count_1=0
+					count_2=0
+					count_3=0
+					count_4=0
+				if s%500000==0:
 					i+=1
 					pylab.figure(i)		#Plots total energy
 					pylab.plot(E_, marker='.', linestyle='None')
@@ -643,9 +667,9 @@ if __name__ == '__main__':
 
 	A=time()
 	T,d=run()
-	for i in range(len(T[:])):
+	'''for i in range(len(T[:])):
 		for l in range(len(T[:][i])):
-			x,y= T[:][i][l],  d_make(d,l)[l]
+			x,y= T[:][i][l],  d_make(d,i)[l]
 			if x!='N/A' and y!='N/A':
-				print x,y
+				print x,y'''
 	print time()-A
