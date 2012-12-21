@@ -576,43 +576,65 @@ def getdE_move_single(t,d,i,j,k):		#get energy difference for interchanging i an
 			if bias[6*l+2]==False and bias[6*l+4]==False and bias[6*l+3]==False and bias[6*l+5]==True and j!=d_le:
 				dB-=getE_part(t[k][i][len(CS_pairs):],t[l][j+1][:-len(CS_pairs)],CS_sigma_xp)
 ##i->j
-			if bias[6*l+2]==True and bias[6*l+4]==True and bias[6*l+3]==True and bias[6*l+5]==False and j!=d_le:
+			if bias[6*l+3]==True and bias[6*l+5]==True and bias[6*l+2]==True and bias[6*l+4]==False and j!=d_le:
 				dB+=getE_part(t[k][j][len(CS_pairs):],t[l][j+1][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==True and bias[6*l+4]==True and bias[6*l+3]==False and bias[6*l+5]==True and j!=0:
+			if bias[6*l+3]==True and bias[6*l+5]==True and bias[6*l+2]==False and bias[6*l+4]==True and j!=0:
 				dB+=getE_part(t[l][j-1][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==True and bias[6*l+4]==False and bias[6*l+3]==True and bias[6*l+5]==True and i!=d_le:
+			if bias[6*l+3]==True and bias[6*l+5]==False and bias[6*l+2]==True and bias[6*l+4]==True and i!=d_le:
 				dB-=getE_part(t[k][j][len(CS_pairs):],t[l][i+1][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==False and bias[6*l+4]==True and bias[6*l+3]==True and bias[6*l+5]==True and i!=0:
+			if bias[6*l+3]==False and bias[6*l+5]==True and bias[6*l+2]==True and bias[6*l+4]==True and i!=0:
 				dB-=getE_part(t[l][i-1][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==False and bias[6*l+4]==False and bias[6*l+3]==True and bias[6*l+5]==True:
+			if bias[6*l+3]==False and bias[6*l+5]==False and bias[6*l+2]==True and bias[6*l+4]==True:
 				if i!=0:
 					dB-=getE_part(t[l][i-1][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
 				if i!=d_le:
 					dB-=getE_part(t[k][j][len(CS_pairs):],t[l][i+1][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==True and bias[6*l+4]==True and bias[6*l+3]==False and bias[6*l+5]==False:
+			if bias[6*l+3]==True and bias[6*l+5]==True and bias[6*l+2]==False and bias[6*l+4]==False:
 				if j!=0:
 					dB+=getE_part(t[l][j-1][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
 				if j!=d_le:
 					dB+=getE_part(t[k][j][len(CS_pairs):],t[l][j+1][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==True and bias[6*l+4]==False and bias[6*l+3]==False and bias[6*l+5]==False and j!=0:
+			if bias[6*l+3]==True and bias[6*l+5]==False and bias[6*l+2]==False and bias[6*l+4]==False and j!=0:
 				dB+=getE_part(t[l][j-1][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==False and bias[6*l+4]==True and bias[6*l+3]==False and bias[6*l+5]==False and j!=d_le:
+			if bias[6*l+3]==False and bias[6*l+5]==True and bias[6*l+2]==False and bias[6*l+4]==False and j!=d_le:
 				dB+=getE_part(t[k][j][len(CS_pairs):],t[l][j+1][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==False and bias[6*l+4]==False and bias[6*l+3]==True and bias[6*l+5]==False and i!=0:
+			if bias[6*l+3]==False and bias[6*l+5]==False and bias[6*l+2]==True and bias[6*l+4]==False and i!=0:
 				dB-=getE_part(t[l][i-1][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
-			if bias[6*l+2]==False and bias[6*l+4]==False and bias[6*l+3]==False and bias[6*l+5]==True and i!=d_le:
+			if bias[6*l+3]==False and bias[6*l+5]==False and bias[6*l+2]==False and bias[6*l+4]==True and i!=d_le:
 				dB-=getE_part(t[k][j][len(CS_pairs):],t[l][i+1][:-len(CS_pairs)],CS_sigma_xp)
 
 
+
 	if j==i+1 or j==i-1:
+
 		dE-=getE_part(t[k][i][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)
 		dE-=getE_part(t[k][j][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
-		dE+=getE_part(t[k][j][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)
-		dE+=getE_part(t[k][i][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)	
+		dE+=2*getE_part(t[k][j][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)	
 		if bias[6*k]==True and bias[6*k+1]==False:
-			dB+=getE_part(t[k][i][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)
+			if bias[6*k+2]==False:
+				dB+=getE_part(t[k][i][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)
 		if bias[6*k]==False and bias[6*k+1]==True:
-			dB+=getE_part(t[k][j][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
+			if bias[6*k+5]==False:
+				dB+=getE_part(t[k][j][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
+
+	'''if j==i-1:
+		B_E=dE
+		B_B=dB
+		dE-=getE_part(t[k][i][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)
+		dE-=getE_part(t[k][j][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
+		dE+=2*getE_part(t[k][i][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)	
+		if bias[6*k+1]==True and bias[6*k]==False:
+			if bias[6*k+3]==False:
+				dB+=getE_part(t[k][j][len(CS_pairs):],t[k][j][:-len(CS_pairs)],CS_sigma_xp)
+		if bias[6*k+1]==False and bias[6*k]==True:
+			if bias[6*k+6]==False:
+				dB+=getE_part(t[k][i][len(CS_pairs):],t[k][i][:-len(CS_pairs)],CS_sigma_xp)
+		A_E=dE
+		A_B=dB
+		dijE=A_E-B_E
+		dijB=A_B-B_B'''
+
+
 
 	t[k][i], t[k][j] = t[k][j], t[k][i]
 	T=get_average(t,i,T)#Tij
@@ -670,7 +692,10 @@ def getdE_move_block(t,d,i,j):
 		t[m][i], t[m][j] = t[m][j], t[m][i]
 	T=get_average(t,i,T) #Tij
 	T=get_average(t,j,T)#Tj
-
+	for m in range(len(spin_systems)):
+		t[m][i], t[m][j] = t[m][j], t[m][i]
+	T=get_average(t,i,T) #Tii
+	T=get_average(t,j,T)#Tjj
 
 	s.append(d_make(d,i))
 	s.append(d_make(d,j))
@@ -795,7 +820,7 @@ if __name__ == '__main__':
 						T=get_average(t,i,T)
 					B=getE([T],d,L)
 					try:
-						print s, E_tot, B, float(count_2)/count_1, float(count_4)/count_3
+						print s, E_tot, B#, float(count_2)/count_1, float(count_4)/count_3
 					except ZeroDivisionError:
 						pass
 					count_1=0
